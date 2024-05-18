@@ -5,9 +5,13 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxOptions;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.RemoteWebDriver;
 
 import java.time.Duration;
-
+import java.net.URL;
+import java.time.Duration;
 /**
  * The {@code Driver} class is a utility for managing WebDriver instances using the Singleton pattern.
  * It provides methods to get a WebDriver instance and close it.
@@ -29,11 +33,47 @@ public class Driver {
      */
     public static WebDriver getDriver() {
         if (driverPool.get() == null) {
-            // Get browser type from configuration
-            String browserType = ConfigurationReader.getProperty("browser");
-
+            /*
+            We will read our browserType from configuration.properties file.
+            This way, we can control which browser is opened from outside our code.
+             */
+            String browserType="";
+            if (System.getProperty("BROWSER") == null) {
+                browserType = ConfigurationReader.getProperty("browser");
+            } else {
+                browserType = System.getProperty("BROWSER");
+            }
+            System.out.println("Browser: " + browserType);
             // Initialize WebDriver based on browser type
             switch (browserType) {
+                case "remote-chrome":
+                    try {
+                        // assign your grid server address
+                        String gridAddress = "54.162.50.13";
+                        URL url = new URL("http://"+ gridAddress + ":4444/wd/hub");
+                        DesiredCapabilities desiredCapabilities = new DesiredCapabilities();
+                        desiredCapabilities.setBrowserName("chrome");
+                        driverPool.set(new RemoteWebDriver(url, desiredCapabilities));
+                        //driverPool.set(new RemoteWebDriver(new URL("http://0.0.0.0:4444/wd/hub"),desiredCapabilities));
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case "remote-firefox":
+                    try {
+                        // assign your grid server address
+                        String gridAddress = "54.1196.44.18";
+                        URL url = new URL("http://"+ gridAddress + ":4444/wd/hub");
+                        DesiredCapabilities desiredCapabilities = new DesiredCapabilities();
+                        desiredCapabilities.setBrowserName("firefox");
+                        driverPool.set(new RemoteWebDriver(url, desiredCapabilities));
+                        //driverPool.set(new RemoteWebDriver(new URL("http://0.0.0.0:4444/wd/hub"),desiredCapabilities));
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    break;
                 case "chrome":
                     driverPool.set(new ChromeDriver());
                     break;
@@ -43,11 +83,11 @@ public class Driver {
                 case "edge":
                     driverPool.set(new EdgeDriver());
                     break;
-                case "headless-chrome":
-                    ChromeOptions options = new ChromeOptions();
-                    options.addArguments("--headless=new");
-                    driverPool.set(new ChromeDriver(options));
-                    break;
+//                case "headless-chrome":
+//                    ChromeOptions options = new ChromeOptions();
+//                    options.addArguments("--headless=new");
+//                    driverPool.set(new ChromeDriver(options));
+//                    break;
                 default:
                     throw new IllegalArgumentException("Invalid browser type specified in the configuration: " + browserType);
             }
